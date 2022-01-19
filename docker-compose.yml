@@ -1,0 +1,40 @@
+version: '3.6'
+
+services:
+  db:
+    container_name: prophet_mysql
+    image: mysql:5.7.27
+    # command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: 'wager'
+      MYSQL_USER: 'user'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - ./data/mysql-data:/var/lib/mysql
+      - ./data/mysql-init-files:/docker-entrypoint-initdb.d
+    restart: always
+  wager:
+    container_name: wager_go
+    image: golang:1.13
+    ports:
+      - "8080:8080"
+    command: go run main.go
+    environment:
+      - LISTEN=:8080
+      - DATABASE_CONNECTION=user:password@tcp(db:3306)/wager?parseTime=true
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - ./:/go/src/prophet
+      - go-pkg:/go/pkg
+    working_dir: /go/src/prophet/cmd/
+volumes:
+  db:
+  go-pkg:
